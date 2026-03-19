@@ -41,7 +41,8 @@ class UKF {
    */
   void UpdateRadar(MeasurementPackage meas_package);
 
-
+  // Filter lifecycle flag. The first measurement only initializes the state;
+  // afterwards the filter alternates between prediction and update.
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
 
@@ -63,6 +64,8 @@ class UKF {
   // time when the state is true, in us
   long long time_us_;
 
+  // CTRV process-noise tuning parameters. These describe how much unmodeled
+  // longitudinal acceleration and yaw acceleration the filter should expect.
   // Process noise standard deviation longitudinal acceleration in m/s^2
   double std_a_;
 
@@ -84,15 +87,21 @@ class UKF {
   // Radar measurement noise standard deviation radius change in m/s
   double std_radrd_ ;
 
+  // Unscented transform weights used to recover means/covariances from the
+  // propagated sigma points.
   // Weights of sigma points
   Eigen::VectorXd weights_;
 
+  // CTRV state dimension: [px, py, v, yaw, yaw_rate].
   // State dimension
   int n_x_;
 
+  // Augmented dimension adds process noise for longitudinal acceleration and
+  // yaw acceleration.
   // Augmented state dimension
   int n_aug_;
 
+  // Sigma-point spread parameter for the unscented transform.
   // Sigma point spreading parameter
   double lambda_;
 };

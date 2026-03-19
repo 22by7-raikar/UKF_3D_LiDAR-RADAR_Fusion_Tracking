@@ -78,16 +78,13 @@ struct Car
 	double cosNegTheta;
 
 	Car()
-		: position(Vect3(0,0,0)), dimensions(Vect3(0,0,0)), color(Color(0,0,0))
+		: position(Vect3(0,0,0)), dimensions(Vect3(0,0,0)), orientation(Eigen::Quaternionf::Identity()), name(""), color(Color(0,0,0)), velocity(0), angle(0), acceleration(0), steering(0), Lf(0), accuateIndex(-1), sinNegTheta(0), cosNegTheta(1)
 	{}
  
 	Car(Vect3 setPosition, Vect3 setDimensions, Color setColor, float setVelocity, float setAngle, float setLf, std::string setName)
-		: position(setPosition), dimensions(setDimensions), color(setColor), velocity(setVelocity), angle(setAngle), Lf(setLf), name(setName)
+		: position(setPosition), dimensions(setDimensions), orientation(Eigen::Quaternionf::Identity()), name(setName), color(setColor), velocity(setVelocity), angle(setAngle), acceleration(0), steering(0), Lf(setLf), accuateIndex(-1), sinNegTheta(0), cosNegTheta(0)
 	{
 		orientation = getQuaternion(angle);
-		acceleration = 0;
-		steering = 0;
-		accuateIndex = -1;
 
 		sinNegTheta = sin(-angle);
 		cosNegTheta = cos(-angle);

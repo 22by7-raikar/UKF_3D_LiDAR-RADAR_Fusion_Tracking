@@ -1,6 +1,20 @@
 # SFND_Unscented_Kalman_Filter
 Sensor Fusion UKF Highway Project Starter Code
 
+## Submission Summary
+
+This repository now contains a complete UKF implementation for the SFND highway tracking project.
+
+- Full project writeup: [WRITEUP.md](WRITEUP.md)
+- Core implementation: [src/ukf.cpp](src/ukf.cpp), [src/ukf.h](src/ukf.h)
+- Highway simulation settings: [src/highway.h](src/highway.h)
+
+Status against rubric:
+
+- Compiles successfully with `cmake` and `make`
+- Uses the expected UKF processing flow (initialize → predict → lidar/radar update)
+- Meets RMSE threshold requirements in the highway scenario after 1 second
+
 <img src="media/ukf_highway_tracked.gif" width="700" height="400" />
 
 In this project you will implement an Unscented Kalman Filter to estimate the state of multiple cars on a highway using noisy lidar and radar measurements. Passing the project requires obtaining RMSE values that are lower that the tolerance outlined in the project rubric. 
