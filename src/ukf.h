@@ -1,109 +1,53 @@
+// Unscented Kalman filter with a CTRV (constant turn rate and velocity)
+// motion model, fusing lidar and radar measurements of one vehicle.
 #ifndef UKF_H
 #define UKF_H
 
-#include "Eigen/Dense"
-#include "measurement_package.h"
+#include <Eigen/Dense>
+
+#include "measurement.h"
 
 class UKF {
  public:
-  /**
-   * Constructor
-   */
   UKF();
 
-  /**
-   * Destructor
-   */
-  virtual ~UKF();
+  // Initialises on the first measurement; afterwards predicts to the
+  // measurement time and applies the matching sensor update.
+  void processMeasurement(const Measurement& m);
 
-  /**
-   * ProcessMeasurement
-   * @param meas_package The latest measurement data of either radar or laser
-   */
-  void ProcessMeasurement(MeasurementPackage meas_package);
+  // Propagates sigma points, state and covariance by dt seconds.
+  void predict(double dt);
 
-  /**
-   * Prediction Predicts sigma points, the state, and the state covariance
-   * matrix
-   * @param delta_t Time between k and k+1 in s
-   */
-  void Prediction(double delta_t);
+  // Linear Kalman update with a lidar position measurement.
+  void updateLidar(const Measurement& m);
 
-  /**
-   * Updates the state and the state covariance matrix using a laser measurement
-   * @param meas_package The measurement at k+1
-   */
-  void UpdateLidar(MeasurementPackage meas_package);
+  // Unscented update with a radar (range, bearing, range rate) measurement.
+  void updateRadar(const Measurement& m);
 
-  /**
-   * Updates the state and the state covariance matrix using a radar measurement
-   * @param meas_package The measurement at k+1
-   */
-  void UpdateRadar(MeasurementPackage meas_package);
+  bool is_initialized_ = false;
+  bool use_lidar_ = true;  // if false, lidar is used only to initialise
+  bool use_radar_ = true;  // if false, radar is used only to initialise
 
-  // Filter lifecycle flag. The first measurement only initializes the state;
-  // afterwards the filter alternates between prediction and update.
-  // initially set to false, set to true in first call of ProcessMeasurement
-  bool is_initialized_;
+  Eigen::VectorXd x_;           // state [px, py, v, yaw, yaw_rate] (SI units, rad)
+  Eigen::MatrixXd P_;           // state covariance
+  Eigen::MatrixXd sigma_pred_;  // predicted sigma points, one per column
+  long long time_us_ = 0;       // time of the current state [us]
 
-  // if this is false, laser measurements will be ignored (except for init)
-  bool use_laser_;
+  // Process noise.
+  double accel_noise_;      // longitudinal acceleration std [m/s^2]
+  double yaw_accel_noise_;  // yaw acceleration std [rad/s^2]
 
-  // if this is false, radar measurements will be ignored (except for init)
-  bool use_radar_;
+  // Measurement noise of the sensors.
+  double lidar_std_x_;        // [m]
+  double lidar_std_y_;        // [m]
+  double radar_range_std_;    // [m]
+  double radar_bearing_std_;  // [rad]
+  double radar_rate_std_;     // [m/s]
 
-  // state vector: [pos1 pos2 vel_abs yaw_angle yaw_rate] in SI units and rad
-  Eigen::VectorXd x_;
-
-  // state covariance matrix
-  Eigen::MatrixXd P_;
-
-  // predicted sigma points matrix
-  Eigen::MatrixXd Xsig_pred_;
-
-  // time when the state is true, in us
-  long long time_us_;
-
-  // CTRV process-noise tuning parameters. These describe how much unmodeled
-  // longitudinal acceleration and yaw acceleration the filter should expect.
-  // Process noise standard deviation longitudinal acceleration in m/s^2
-  double std_a_;
-
-  // Process noise standard deviation yaw acceleration in rad/s^2
-  double std_yawdd_;
-
-  // Laser measurement noise standard deviation position1 in m
-  double std_laspx_;
-
-  // Laser measurement noise standard deviation position2 in m
-  double std_laspy_;
-
-  // Radar measurement noise standard deviation radius in m
-  double std_radr_;
-
-  // Radar measurement noise standard deviation angle in rad
-  double std_radphi_;
-
-  // Radar measurement noise standard deviation radius change in m/s
-  double std_radrd_ ;
-
-  // Unscented transform weights used to recover means/covariances from the
-  // propagated sigma points.
-  // Weights of sigma points
-  Eigen::VectorXd weights_;
-
-  // CTRV state dimension: [px, py, v, yaw, yaw_rate].
-  // State dimension
-  int n_x_;
-
-  // Augmented dimension adds process noise for longitudinal acceleration and
-  // yaw acceleration.
-  // Augmented state dimension
-  int n_aug_;
-
-  // Sigma-point spread parameter for the unscented transform.
-  // Sigma point spreading parameter
-  double lambda_;
+  Eigen::VectorXd weights_;  // sigma point weights
+  int n_x_;                  // state dimension
+  int n_aug_;                // augmented state dimension (state + process noise)
+  double lambda_;            // sigma point spreading parameter
 };
 
 #endif  // UKF_H

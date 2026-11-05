@@ -1,43 +1,32 @@
-/* \author Aaron Brown */
-// Create simple 3d highway enviroment using PCL
-// for exploring self-driving car sensors
+// Runs the highway scene for 10 s at 30 frames per second, tracking each
+// traffic car with a UKF and showing the result in a PCL viewer.
 
-//#include "render/render.h"
-#include "highway.h"
+#include <iostream>
 
-int main(int argc, char** argv)
-{
+#include "sim/highway.h"
 
-	pcl::visualization::PCLVisualizer::Ptr viewer(new pcl::visualization::PCLVisualizer("3D Viewer"));
-	viewer->setBackgroundColor(0, 0, 0);
+int main() {
+  pcl::visualization::PCLVisualizer::Ptr viewer(new pcl::visualization::PCLVisualizer("3D Viewer"));
+  viewer->setBackgroundColor(0, 0, 0);
+  viewer->initCameraParameters();
+  viewer->setCameraPosition(-26, 0, 15.0, 25, 0, 0, 0, 0, 1);
 
-	// set camera position and angle
-	viewer->initCameraParameters();
-	float x_pos = 0;
-	viewer->setCameraPosition ( x_pos-26, 0, 15.0, x_pos+25, 0, 0, 0, 0, 1);
+  Highway highway(viewer);
 
-	Highway highway(viewer);
+  const int frame_per_sec = 30;
+  const int sec_interval = 10;
+  const double egoVelocity = 25;
 
-	//initHighway(viewer);
-
-	int frame_per_sec = 30;
-	int sec_interval = 10;
-	int frame_count = 0;
-	int time_us = 0;
-
-	double egoVelocity = 25;
-
-	while (frame_count < (frame_per_sec*sec_interval))
-	{
-		viewer->removeAllPointClouds();
-		viewer->removeAllShapes();
-
-		//stepHighway(egoVelocity,time_us, frame_per_sec, viewer);
-		highway.stepHighway(egoVelocity,time_us, frame_per_sec, viewer);
-		viewer->spinOnce(1000/frame_per_sec);
-		frame_count++;
-		time_us = 1000000*frame_count/frame_per_sec;
-		
-	}
-
+  for (int frame = 0; frame < frame_per_sec * sec_interval; ++frame) {
+    const long long time_us = 1000000LL * frame / frame_per_sec;
+    viewer->removeAllPointClouds();
+    viewer->removeAllShapes();
+    highway.stepHighway(egoVelocity, time_us, frame_per_sec, viewer);
+    viewer->spinOnce(1000 / frame_per_sec);
+  }
+  const Eigen::VectorXd rmse = Sensors::rmse(highway.sensors.estimations,
+                                             highway.sensors.ground_truth);
+  std::cout << "RMSE [px py vx vy]: " << rmse.transpose() << "\n"
+            << (highway.pass ? "within" : "outside") << " the RMSE targets after 1 s\n";
+  return highway.pass ? 0 : 1;
 }

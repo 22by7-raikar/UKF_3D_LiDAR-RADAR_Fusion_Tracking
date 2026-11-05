@@ -1,90 +1,64 @@
-# SFND_Unscented_Kalman_Filter
-Sensor Fusion UKF Highway Project Starter Code
+# UKF LiDAR–Radar Fusion Tracking
 
-## Submission Summary
+An Unscented Kalman Filter in C++ that tracks three cars on a simulated
+highway by fusing noisy lidar and radar measurements. Each car has its own
+filter with a CTRV (constant turn rate and velocity) motion model; lidar
+updates are linear, radar updates (range, bearing, range rate) go through
+the unscented transform.
 
-This repository now contains a complete UKF implementation for the SFND highway tracking project.
+<img src="docs/images/tracking.gif" width="700" />
 
-- Full project writeup: [WRITEUP.md](WRITEUP.md)
-- Core implementation: [src/ukf.cpp](src/ukf.cpp), [src/ukf.h](src/ukf.h)
-- Highway simulation settings: [src/highway.h](src/highway.h)
+The ego car (green) drives in the centre lane; the traffic cars (blue)
+accelerate, brake and change lanes. Red spheres are lidar detections, purple
+lines are radar detections with their range rate, and green spheres and
+arrows are the UKF estimates of position and velocity.
 
-Status against rubric:
+## Results
 
-- Compiles successfully with `cmake` and `make`
-- Uses the expected UKF processing flow (initialize → predict → lidar/radar update)
-- Meets RMSE threshold requirements in the highway scenario after 1 second
+RMSE over the 10 s run, against targets checked continuously after the first
+second:
 
-<img src="media/ukf_highway_tracked.gif" width="700" height="400" />
+| | px [m] | py [m] | vx [m/s] | vy [m/s] |
+|---|---|---|---|---|
+| Target | 0.30 | 0.16 | 0.95 | 0.70 |
+| **UKF** | **0.068** | **0.080** | **0.433** | **0.477** |
 
-In this project you will implement an Unscented Kalman Filter to estimate the state of multiple cars on a highway using noisy lidar and radar measurements. Passing the project requires obtaining RMSE values that are lower that the tolerance outlined in the project rubric. 
+How the filter works and how it was tuned: [docs/DESIGN.md](docs/DESIGN.md).
 
-The main program can be built and ran by doing the following from the project top directory.
+## Build and run
 
-1. mkdir build
-2. cd build
-3. cmake ..
-4. make
-5. ./ukf_highway
+Ubuntu 22.04 or 24.04:
 
-Note that the programs that need to be written to accomplish the project are src/ukf.cpp, and src/ukf.h
+```bash
+sudo apt install cmake g++ libeigen3-dev libpcl-dev
+cmake -S . -B build && cmake --build build -j
+./build/highway_ukf
+```
 
-The program main.cpp has already been filled out, but feel free to modify it.
+The program prints the final RMSE and exits with status 0 when every target
+was met.
 
-<img src="media/ukf_highway.png" width="700" height="400" />
+## Options
 
-`main.cpp` is using `highway.h` to create a straight 3 lane highway environment with 3 traffic cars and the main ego car at the center. 
-The viewer scene is centered around the ego car and the coordinate system is relative to the ego car as well. The ego car is green while the 
-other traffic cars are blue. The traffic cars will be accelerating and altering their steering to change lanes. Each of the traffic car's has
-it's own UKF object generated for it, and will update each indidual one during every time step. 
+In [src/sim/highway.h](src/sim/highway.h):
 
-The red spheres above cars represent the (x,y) lidar detection and the purple lines show the radar measurements with the velocity magnitude along the detected angle. The Z axis is not taken into account for tracking, so you are only tracking along the X/Y axis.
+- `trackCars`: which traffic cars to track
+- `visualize_lidar`, `visualize_radar`: draw the measurements
+- `visualize_pcd`: draw the recorded lidar point clouds (`data/pcd`) instead of the car models
+- `projectedTime`, `projectedSteps`: draw each UKF's predicted path
 
----
+## Layout
 
-## Other Important Dependencies
-* cmake >= 3.5
-  * All OSes: [click here for installation instructions](https://cmake.org/install/)
-* make >= 4.1 (Linux, Mac), 3.81 (Windows)
-  * Linux: make is installed by default on most Linux distros
-  * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
-  * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
-* gcc/g++ >= 5.4
-  * Linux: gcc / g++ is installed by default on most Linux distros
-  * Mac: same deal as make - [install Xcode command line tools](https://developer.apple.com/xcode/features/)
-  * Windows: recommend using [MinGW](http://www.mingw.org/)
- * PCL 1.2
+```
+src/ukf.h, ukf.cpp     the filter
+src/measurement.h      sensor reading passed to the filter
+src/sim/               highway scene, sensor simulation, ray-cast lidar
+src/render/            PCL drawing
+data/pcd/              recorded lidar point clouds of the scene
+docs/                  design notes and images
+```
 
-## Basic Build Instructions
+## Credits
 
-1. Clone this repo.
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make`
-4. Run it: `./ukf_highway`
-
-## Editor Settings
-
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
-
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
-
-## Code Style
-
-Please stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html) as much as possible.
-
-## Generating Additional Data
-
-This is optional!
-
-If you'd like to generate your own radar and lidar modify the code in `highway.h` to alter the cars. Also check out `tools.cpp` to
-change how measurements are taken, for instance lidar markers could be the (x,y) center of bounding boxes by scanning the PCD environment
-and performing clustering. This is similar to what was done in Sensor Fusion Lidar Obstacle Detection.
-
-## Project Instructions and Rubric
-
-This information is only accessible by people who are already enrolled in Sensor Fusion. 
-If you are enrolled, see the project page in the classroom
-for instructions and the project rubric.
+The highway scene, rendering and recorded point clouds are adapted from
+Aaron Brown's highway UKF simulation.

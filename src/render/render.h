@@ -1,6 +1,5 @@
-/* \author Aaron Brown */
-// Functions and structs used to render the enviroment
-// such as cars and the highway
+// Scene types (colours, vectors, cars with a kinematic bicycle model) and the
+// PCL drawing helpers for the highway.
 
 #ifndef RENDER_H
 #define RENDER_H
@@ -42,13 +41,14 @@ enum CameraAngle
 	XY, TopDown, Side, FPS
 };
 
-struct accuation
+// A change of a car's acceleration [m/s^2] and steering [rad] at time_us.
+struct Actuation
 {
 	long long time_us;
 	float acceleration;
 	float steering;
 
-	accuation(long long t, float acc, float s)
+	Actuation(long long t, float acc, float s)
 		: time_us(t), acceleration(acc), steering(s)
 	{}
 };
@@ -70,19 +70,19 @@ struct Car
 
 	UKF ukf;
 
-	//accuation instructions
-	std::vector<accuation> instructions;
-	int accuateIndex;
+	// timed actuation instructions, applied in order
+	std::vector<Actuation> instructions;
+	int actuationIndex;
 
 	double sinNegTheta;
 	double cosNegTheta;
 
 	Car()
-		: position(Vect3(0,0,0)), dimensions(Vect3(0,0,0)), orientation(Eigen::Quaternionf::Identity()), name(""), color(Color(0,0,0)), velocity(0), angle(0), acceleration(0), steering(0), Lf(0), accuateIndex(-1), sinNegTheta(0), cosNegTheta(1)
+		: position(Vect3(0,0,0)), dimensions(Vect3(0,0,0)), orientation(Eigen::Quaternionf::Identity()), name(""), color(Color(0,0,0)), velocity(0), angle(0), acceleration(0), steering(0), Lf(0), actuationIndex(-1), sinNegTheta(0), cosNegTheta(1)
 	{}
  
 	Car(Vect3 setPosition, Vect3 setDimensions, Color setColor, float setVelocity, float setAngle, float setLf, std::string setName)
-		: position(setPosition), dimensions(setDimensions), orientation(Eigen::Quaternionf::Identity()), name(setName), color(setColor), velocity(setVelocity), angle(setAngle), acceleration(0), steering(0), Lf(setLf), accuateIndex(-1), sinNegTheta(0), cosNegTheta(0)
+		: position(setPosition), dimensions(setDimensions), orientation(Eigen::Quaternionf::Identity()), name(setName), color(setColor), velocity(setVelocity), angle(setAngle), acceleration(0), steering(0), Lf(setLf), actuationIndex(-1), sinNegTheta(0), cosNegTheta(0)
 	{
 		orientation = getQuaternion(angle);
 
@@ -133,10 +133,9 @@ struct Car
 		steering = setSteer;
 	}
 
-	void setInstructions(std::vector<accuation> setIn)
+	void setInstructions(const std::vector<Actuation>& setIn)
 	{
-		for(accuation a : setIn)
-			instructions.push_back(a);
+		instructions.insert(instructions.end(), setIn.begin(), setIn.end());
 	}
 
 	void setUKF(UKF tracker)
@@ -147,13 +146,13 @@ struct Car
 	void move(float dt, int time_us)
 	{
 
-		if(instructions.size() > 0 && accuateIndex < (int)instructions.size()-1)
+		if(instructions.size() > 0 && actuationIndex < (int)instructions.size()-1)
 		{
-			if(time_us >= instructions[accuateIndex+1].time_us)
+			if(time_us >= instructions[actuationIndex+1].time_us)
 			{
-				setAcceleration(instructions[accuateIndex+1].acceleration);
-				setSteering(instructions[accuateIndex+1].steering);
-				accuateIndex++;
+				setAcceleration(instructions[actuationIndex+1].acceleration);
+				setSteering(instructions[actuationIndex+1].steering);
+				actuationIndex++;
 			}
 		}
 

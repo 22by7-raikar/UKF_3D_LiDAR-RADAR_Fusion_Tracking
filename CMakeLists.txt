@@ -1,25 +1,23 @@
-cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10)
+project(highway_ukf_tracking)
 
-project(ukf_highway)
-
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
 
-set(CXX_FLAGS "-Wall")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_FLAGS}")
+find_package(Eigen3 REQUIRED NO_MODULE)
+find_package(PCL REQUIRED COMPONENTS common io visualization)
 
-find_package(PCL 1.2 REQUIRED)
-
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
-
-
-add_executable (ukf_highway src/main.cpp src/ukf.cpp src/tools.cpp src/render/render.cpp)
-target_link_libraries (ukf_highway ${PCL_LIBRARIES})
-
-
-
-
+add_executable(highway_ukf
+  src/main.cpp
+  src/ukf.cpp
+  src/sim/sensors.cpp
+  src/render/render.cpp)
+target_include_directories(highway_ukf PRIVATE src ${PCL_INCLUDE_DIRS})
+target_compile_definitions(highway_ukf PRIVATE ${PCL_DEFINITIONS}
+  PCD_DIR="${CMAKE_SOURCE_DIR}/data/pcd")
+target_compile_options(highway_ukf PRIVATE -Wall)
+target_link_libraries(highway_ukf PRIVATE Eigen3::Eigen ${PCL_LIBRARIES})
